@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
+#include "AbilitySystemComponent.h"
 #include "GASCharacterBase.generated.h"
 
 UCLASS()
-class GAS_API AGASCharacterBase : public ACharacter
+class GAS_API AGASCharacterBase : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -15,9 +17,22 @@ public:
 	// Sets default values for this character's properties
 	AGASCharacterBase();
 
+	//Ability System Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AbilitySystem")
+	class UAbilitySystemComponent* AbilitySystemComponent;
+
+protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AbilitySystem")
+	EGameplayEffectReplicationMode ASCReplicationMode = EGameplayEffectReplicationMode::Mixed;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void PossessedBy(AController* NewController) override;
+	
+	virtual void OnRep_PlayerState() override;
 
 public:	
 	// Called every frame
@@ -26,4 +41,5 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const;
 };
