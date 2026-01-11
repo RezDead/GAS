@@ -5,6 +5,8 @@
 #include "GASCharacterBase.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GAS/GameplayAbilitySystem/AttributeSets/BasicAttributeSet.h"
+#include "GAS/GameplayAbilitySystem/AttributeSets/ManaAttributeSet.h"
 
 // Sets default values
 AGASCharacterBase::AGASCharacterBase()
@@ -35,6 +37,12 @@ AGASCharacterBase::AGASCharacterBase()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 500.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
+
+	//Add the basic attribute set
+	BasicAttributeSet = CreateDefaultSubobject<UBasicAttributeSet>(TEXT("BasicAttributeSet"));
+	
+	//Add Mana Attribute set
+	ManaAttributeSet = CreateDefaultSubobject<UManaAttributeSet>(TEXT("ManaAttributeSet"));
 	
 }
 
