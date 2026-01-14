@@ -63,4 +63,10 @@ public:
 
 	//Determines how values are replicated
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	//Used to clamp attribute values on manual change
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+
+	//Used to clamp attribute values on effect change (Currently implemented in a way to call PreAttributeChange)
+	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
 };
