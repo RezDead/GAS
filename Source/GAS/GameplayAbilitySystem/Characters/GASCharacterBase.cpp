@@ -3,6 +3,8 @@
 
 #include "GASCharacterBase.h"
 #include "GASCharacterBase.h"
+#include "GAS/GameplayAbilitySystem/CustomAbilitySystemComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GAS/GameplayAbilitySystem/AttributeSets/BasicAttributeSet.h"
@@ -15,7 +17,7 @@ AGASCharacterBase::AGASCharacterBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//Add the ability system component
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent = CreateDefaultSubobject<UCustomAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(ASCReplicationMode);
 
@@ -74,6 +76,7 @@ void AGASCharacterBase::PossessedBy(AController* NewController)
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this,this);
+		GrantAbilities(StartingAbilities);
 	}
 }
 
@@ -90,4 +93,49 @@ void AGASCharacterBase::OnRep_PlayerState()
 UAbilitySystemComponent* AGASCharacterBase::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+TArray<FGameplayAbilitySpecHandle> AGASCharacterBase::GrantAbilities(
+	TArray<TSubclassOf<UGameplayAbility>> AbilitiesToGrant)
+{
+	if (!AbilitySystemComponent || !HasAuthority())
+	{
+		return TArray<FGameplayAbilitySpecHandle>();
+	}
+
+	TArray<FGameplayAbilitySpecHandle> AbilityHandles;
+
+	for (TSubclassOf<UGameplayAbility> const Ability : AbilitiesToGrant)
+	{
+		FGameplayAbilitySpecHandle SpecHandle = AbilitySystemComponent->GiveAbility(
+			FGameplayAbilitySpec(Ability, 1, -1, this));
+
+		AbilityHandles.Add(SpecHandle);
+	}
+
+	SendAbilitiesChangedEvent();
+	return AbilityHandles;
+}
+
+void AGASCharacterBase::RemoveAbilities(TArray<FGameplayAbilitySpecHandle> AbilityHandlesToRemove)
+{
+	if (!AbilitySystemComponent || !HasAuthority()) return;
+	
+	for (FGameplayAbilitySpecHandle AbilityHandle : AbilityHandlesToRemove)
+	{
+		AbilitySystemComponent->ClearAbility(AbilityHandle);
+	}
+
+	SendAbilitiesChangedEvent();
+}
+
+void AGASCharacterBase::SendAbilitiesChangedEvent()
+{
+	FGameplayEventData EventData;
+	
+	EventData.EventTag = FGameplayTag::RequestGameplayTag(TEXT("Event.Abilities.Changed"));
+	EventData.Instigator = this;
+	EventData.Target = this;
+
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, EventData.EventTag, EventData);
 }
